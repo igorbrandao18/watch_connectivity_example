@@ -37,6 +37,9 @@ struct ContentView: View {
             WCSession.default.sendMessage(message, replyHandler: nil) { error in
                 print("Erro ao enviar mensagem: \(error.localizedDescription)")
             }
+            
+            // Limpar o campo de texto após o envio
+            textToSend = ""
         } else {
             print("iPhone não está acessível")
         }
