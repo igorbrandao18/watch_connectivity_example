@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Import necessário para o MethodChannel
-import 'package:watch_connectivity/watch_connectivity.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,7 +31,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final WatchConnectivityBase _watchConnectivity = WatchConnectivity();
   String _receivedText = "";
   final TextEditingController _textController = TextEditingController();
 
@@ -43,38 +41,30 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    // Escutar mensagens vindas do iOS (via canal nativo)
+    // Escutar mensagens vindas do iPhone (via canal nativo)
     platform.setMethodCallHandler((call) async {
       if (call.method == "receivedMessage") {
         setState(() {
           _receivedText = call.arguments as String;
         });
-      }
-    });
-
-    // Listen for messages from the Apple Watch
-    _watchConnectivity.messageStream.listen((message) {
-      print('Mensagem recebida no Flutter: $message');
-      if (message.containsKey('response')) {
-        setState(() {
-          _receivedText = message['response'];
-        });
+        print("Mensagem recebida no Flutter: $_receivedText");
       }
     });
   }
 
-  Future<void> _sendTextToWatch() async {
+  // Enviar texto ao Apple Watch via MethodChannel
+  Future<void> _sendTextToAppleWatch() async {
     final textToSend = _textController.text;
-    final isPaired = await _watchConnectivity.isPaired;
-    final isReachable = await _watchConnectivity.isReachable;
 
-    if (isPaired && isReachable) {
-      // Enviar texto ao Apple Watch
-      _watchConnectivity.sendMessage({'text': textToSend});
-      print('Mensagem enviada para o Apple Watch: $textToSend');
-    } else {
-      print('Apple Watch não está conectado.');
+    try {
+      await platform.invokeMethod('sendMessage', {'text': textToSend});
+      print('Mensagem enviada ao Apple Watch via iPhone: $textToSend');
+    } on PlatformException catch (e) {
+      print('Erro ao enviar mensagem via MethodChannel: ${e.message}');
     }
+
+    // Limpar o campo de texto após o envio
+    _textController.clear();
   }
 
   @override
@@ -97,8 +87,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _sendTextToWatch,
-              child: const Text('Enviar para Apple Watch'),
+              onPressed: _sendTextToAppleWatch,
+              child: const Text('Enviar para Apple Watch via iPhone'),
             ),
             const SizedBox(height: 20),
             Text(
