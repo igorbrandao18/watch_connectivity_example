@@ -4,10 +4,16 @@ import WatchConnectivity
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, WCSessionDelegate {
+  
+  private var methodChannel: FlutterMethodChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    let flutterViewController: FlutterViewController = window?.rootViewController as! FlutterViewController
+    methodChannel = FlutterMethodChannel(name: "com.example.watch", binaryMessenger: flutterViewController.binaryMessenger)
+
     GeneratedPluginRegistrant.register(with: self)
 
     // Iniciar sessão de WatchConnectivity se estiver disponível
@@ -23,8 +29,10 @@ import WatchConnectivity
   // Delegate method chamado quando o app recebe uma mensagem do Apple Watch
   func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
     if let textReceived = message["text"] as? String {
-      // Aqui você pode manipular a mensagem recebida do Apple Watch
       print("Texto recebido do Apple Watch: \(textReceived)")
+      
+      // Enviar a mensagem recebida ao Flutter via FlutterMethodChannel
+      methodChannel?.invokeMethod("receivedMessage", arguments: textReceived)
       
       // Exemplo: Enviar resposta de volta ao Apple Watch
       session.sendMessage(["response": "Texto recebido com sucesso!"], replyHandler: nil, errorHandler: nil)
@@ -44,12 +52,11 @@ import WatchConnectivity
     }
   }
 
-  // Método obrigatório para conformar com WCSessionDelegate
+  // Métodos obrigatórios para conformar com WCSessionDelegate
   func sessionDidBecomeInactive(_ session: WCSession) {
     // Código para lidar com sessão inativa, se necessário
   }
 
-  // Método obrigatório para conformar com WCSessionDelegate
   func sessionDidDeactivate(_ session: WCSession) {
     // Reativar uma nova sessão, se necessário
     session.activate()

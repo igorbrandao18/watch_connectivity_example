@@ -86,6 +86,18 @@ class WatchSessionDelegate: NSObject, WCSessionDelegate {
             print("iPhone não está acessível")
         }
     }
+
+    // Esses métodos são necessários apenas no iOS, não no watchOS
+    #if os(iOS)
+    func sessionDidBecomeInactive(_ session: WCSession) {
+        // Pode ser deixado vazio ou com lógica específica
+    }
+
+    func sessionDidDeactivate(_ session: WCSession) {
+        // Reative a sessão, se necessário
+        session.activate()
+    }
+    #endif
 }
 
 #Preview {

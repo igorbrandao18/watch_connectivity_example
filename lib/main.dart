@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import necessário para o MethodChannel
 import 'package:watch_connectivity/watch_connectivity.dart';
 
 void main() {
@@ -35,21 +36,30 @@ class _MyHomePageState extends State<MyHomePage> {
   String _receivedText = "";
   final TextEditingController _textController = TextEditingController();
 
+  // Método de canal para se comunicar com o código nativo
+  static const platform = MethodChannel('com.example.watch');
+
   @override
   void initState() {
     super.initState();
+
+    // Escutar mensagens vindas do iOS (via canal nativo)
+    platform.setMethodCallHandler((call) async {
+      if (call.method == "receivedMessage") {
+        setState(() {
+          _receivedText = call.arguments as String;
+        });
+      }
+    });
+
     // Listen for messages from the Apple Watch
     _watchConnectivity.messageStream.listen((message) {
-      print('Mensagem recebida: $message'); // Debug: verifique o que está sendo recebido
+      print('Mensagem recebida no Flutter: $message');
       if (message.containsKey('response')) {
         setState(() {
           _receivedText = message['response'];
         });
-      } else {
-        print('Chave "response" não encontrada na mensagem recebida.');
       }
-    }, onError: (error) {
-      print('Erro ao receber mensagem: $error'); // Debug para erros
     });
   }
 
@@ -59,9 +69,9 @@ class _MyHomePageState extends State<MyHomePage> {
     final isReachable = await _watchConnectivity.isReachable;
 
     if (isPaired && isReachable) {
-      // Send text to Apple Watch
+      // Enviar texto ao Apple Watch
       _watchConnectivity.sendMessage({'text': textToSend});
-      print('Mensagem enviada para o Apple Watch: $textToSend'); // Debug: verificar se foi enviada
+      print('Mensagem enviada para o Apple Watch: $textToSend');
     } else {
       print('Apple Watch não está conectado.');
     }
