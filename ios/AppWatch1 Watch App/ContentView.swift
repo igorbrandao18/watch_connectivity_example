@@ -2,25 +2,18 @@ import SwiftUI
 import WatchConnectivity
 
 struct ContentView: View {
-    @State private var messageFromPhone = "Nenhuma mensagem recebida"
+    @State private var textToSend = ""
 
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-
-            Button(action: {
-                sendMessageToPhone()
-            }) {
-                Text("Enviar mensagem para o iPhone")
-            }
-
-            Text("Recebido do iPhone: \(messageFromPhone)")
+            TextField("Digite sua mensagem", text: $textToSend)
                 .padding()
+
+            Button("Enviar para iPhone") {
+                sendMessageToiPhone()
+            }
+            .padding()
         }
-        .padding()
         .onAppear {
             activateSession()
         }
@@ -28,29 +21,19 @@ struct ContentView: View {
 
     // Função para ativar a sessão de WatchConnectivity
     func activateSession() {
-        // Verifica se o WCSession está suportado no dispositivo
         if WCSession.isSupported() {
             let session = WCSession.default
-            if session.activationState != .activated {
-                session.delegate = WatchSessionDelegate.shared
-                session.activate()
-            }
-
-            // Listen for messages from the iPhone
-            WatchSessionDelegate.shared.onMessageReceived = { message in
-                if let response = message["response"] as? String {
-                    messageFromPhone = response
-                }
-            }
+            session.delegate = WatchSessionDelegate.shared
+            session.activate()
         } else {
             print("WatchConnectivity não é suportado neste dispositivo.")
         }
     }
 
-    // Função para enviar mensagem ao iPhone
-    func sendMessageToPhone() {
-        let message = ["text": "Olá, iPhone!"]
+    // Função para enviar a mensagem digitada para o iPhone
+    func sendMessageToiPhone() {
         if WCSession.default.isReachable {
+            let message = ["text": textToSend]
             WCSession.default.sendMessage(message, replyHandler: nil) { error in
                 print("Erro ao enviar mensagem: \(error.localizedDescription)")
             }
@@ -62,14 +45,14 @@ struct ContentView: View {
 
 class WatchSessionDelegate: NSObject, WCSessionDelegate {
     static let shared = WatchSessionDelegate()
-    var onMessageReceived: (([String: Any]) -> Void)?
 
-    // Delegate chamado quando uma mensagem é recebida
     func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        onMessageReceived?(message)
+        // Aqui você pode manipular a mensagem recebida do iPhone, se necessário
+        if let response = message["response"] as? String {
+            print("Resposta recebida do iPhone: \(response)")
+        }
     }
 
-    // Método obrigatório: ativação da sessão foi concluída
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         if let error = error {
             print("Erro na ativação da sessão: \(error.localizedDescription)")
@@ -77,29 +60,4 @@ class WatchSessionDelegate: NSObject, WCSessionDelegate {
             print("Sessão ativada com sucesso")
         }
     }
-
-    // Esse método é opcional, mas pode ajudar a monitorar a acessibilidade
-    func sessionReachabilityDidChange(_ session: WCSession) {
-        if session.isReachable {
-            print("iPhone acessível")
-        } else {
-            print("iPhone não está acessível")
-        }
-    }
-
-    // Esses métodos são necessários apenas no iOS, não no watchOS
-    #if os(iOS)
-    func sessionDidBecomeInactive(_ session: WCSession) {
-        // Pode ser deixado vazio ou com lógica específica
-    }
-
-    func sessionDidDeactivate(_ session: WCSession) {
-        // Reative a sessão, se necessário
-        session.activate()
-    }
-    #endif
-}
-
-#Preview {
-    ContentView()
 }
