@@ -23,6 +23,18 @@ import WatchConnectivity
       session.activate()
     }
 
+    // Escutar mensagens vindas do Flutter
+    methodChannel?.setMethodCallHandler({ [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
+      if call.method == "sendMessageToAppDelegate" {
+        if let message = call.arguments as? String {
+          print("Mensagem recebida do Flutter: \(message)")
+          result("Mensagem recebida com sucesso no AppDelegate!")
+        } else {
+          result(FlutterError(code: "INVALID_ARGUMENT", message: "Argumento inválido", details: nil))
+        }
+      }
+    })
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

@@ -63,6 +63,15 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> _sendTextToAppDelegate(String message) async {
+    try {
+      await platform.invokeMethod('sendMessageToAppDelegate', message);
+      print('Mensagem enviada para o AppDelegate: $message');
+    } on PlatformException catch (e) {
+      print('Erro ao enviar mensagem para o AppDelegate: ${e.message}');
+    }
+  }
+
   Future<void> _sendTextToWatch() async {
     final textToSend = _textController.text;
     final isPaired = await _watchConnectivity.isPaired;
@@ -72,6 +81,9 @@ class _MyHomePageState extends State<MyHomePage> {
       // Enviar texto ao Apple Watch
       _watchConnectivity.sendMessage({'text': textToSend});
       print('Mensagem enviada para o Apple Watch: $textToSend');
+      
+      // Também enviar texto ao AppDelegate
+      await _sendTextToAppDelegate(textToSend);
     } else {
       print('Apple Watch não está conectado.');
     }
