@@ -60,4 +60,20 @@ class WatchSessionDelegate: NSObject, WCSessionDelegate {
             print("Sessão ativada com sucesso")
         }
     }
+
+    // Implementação condicional para os métodos disponíveis apenas no iOS
+       #if os(iOS)
+       // Método obrigatório no iOS
+       func sessionDidBecomeInactive(_ session: WCSession) {
+           // Comportamento específico para o iOS
+           print("Sessão ficou inativa no iOS")
+       }
+
+       // Método obrigatório no iOS
+       func sessionDidDeactivate(_ session: WCSession) {
+           // Reativar a sessão no iOS
+           session.activate()
+           print("Sessão foi desativada no iOS, reativando")
+       }
+       #endif
 }
